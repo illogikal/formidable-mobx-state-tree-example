@@ -1,6 +1,10 @@
 ﻿
 export tag Tweets
 	prop store
+	def mount
+		store.makeNewTweets!
+		store.stopTweets!
+
 	<self>
 		<h1> "This is an about page"
 		<div [d:flex jc:center]>

@@ -1,7 +1,6 @@
 ﻿
-import { types } from "mobx-state-tree"
+import { types, addMiddleware } from "mobx-state-tree"
 import { faker } from '@faker-js/faker';
-
 let id = 0
 
 const Author = types.model({
@@ -22,6 +21,29 @@ const Tweet = types.model({
 	}
 )
 
+let newtweets
+let makeNewTweets = do 
+	newtweets = setInterval((do 
+		const [firstName, lastName] = faker.name.findName().split(' ')
+		const author = {
+			id: faker.random.uuid(),
+			firstName,
+			lastName
+		}
+		const tweet = {
+			id: "{id++}",
+			author: author.id, 
+			body: faker.lorem.sentence(),
+			timestamp: Date.now()
+		}
+		store.addAuthor author
+		store.addTweet tweet
+	), 400)
+
+const stopTweets = do setTimeout((do
+	clearInterval(newtweets)
+), 5000)
+
 const RootStore = types.model({
 	authors: types.array(Author),
 	tweets: types.array(Tweet)
@@ -35,34 +57,33 @@ const RootStore = types.model({
 			store.tweets = store.tweets.filter(do $1.id !== tweet_id)
 		removeAuthor: do |author_id| 
 			store.authors = store.authors.filter(do $1.id !== author_id)
+		makeNewTweets,
+		stopTweets
 	}
 )
-
 
 const store = RootStore.create({
 	authors: [],
 	tweets: []
 })
 
-let newtweets = setInterval((do 
-	const [firstName, lastName] = faker.name.findName().split(' ')
-	const author = {
-		id: faker.random.uuid(),
-		firstName,
-		lastName
-	}
-	const tweet = {
-		id: "{id++}",
-		author: author.id, 
-		body: faker.lorem.sentence(),
-		timestamp: Date.now()
-	}
-	store.addAuthor author
-	store.addTweet tweet
-), 400)
+# DB PERSIST MIDDLEWARE EXAMPLE
+addMiddleware(store, (do |call, next, abort|
+	switch call.name
+		when 'addTweet'
+			console.log call.name, call.args[0]
+			# DB PERSIST LOGIC HERE
+		when 'addAuthor'
+			console.log call.name, call.args[0]
+			# DB PERSIST LOGIC HERE
+		when 'removeTweet'
+			console.log call.name, call.args[0]
+			# DB PERSIST LOGIC HERE
+		when 'removeAuthor'
+			console.log call.name, call.args[0]
+			# DB PERSIST LOGIC HERE
 
-setTimeout((do
-	clearInterval(newtweets)
-), 5000)
+	next(call)
+))
 
 export { store }
