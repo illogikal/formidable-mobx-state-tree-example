@@ -1,0 +1,21 @@
+#!/usr/bin/env node
+const { spawn } = require('child_process');
+const { join } = require('path');
+
+const runtime = join(process.cwd(), 'node_modules', '.bin', 'imbar');
+const console = join('bootstrap', 'console.imba');
+
+const conf = {
+    stdio: 'inherit',
+    cwd: process.cwd(),
+};
+
+if (process.platform === 'win32') {
+    const sh = process.env.comspec || 'cmd';
+    const shFlag = '/d /s /c';
+    conf.windowsVerbatimArguments = true;
+
+    spawn(sh, [shFlag, runtime, console, ...process.argv.slice(2)], conf);
+} else {
+    spawn(runtime, [console, ...process.argv.slice(2)], conf);
+}
